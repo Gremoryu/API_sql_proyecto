@@ -1,1 +1,1 @@
-API sql para el proyecto multidiciplinario
+API sql para el proyecto multidisciplinario
