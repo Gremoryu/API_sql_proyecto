@@ -36,7 +36,7 @@ class Producto {
   static async getAll({ offset, limit }, { sort, order }) {
     const connection = await db.createConnection();
     let query =
-      "SELECT id_producto, nombre, descripcion, id_categoria, precio, cantidad, url_img, calificaciones, id_color, talla,  created_at, deleted, deleted_at, updated_at FROM productos WHERE deleted = 0";
+      "SELECT id_producto, nombre, descripcion, id_categoria, precio, cantidad_disponible, url_img, calificaciones, id_color, talla,  created_at, deleted, deleted_at, updated_at FROM productos WHERE deleted = 0";
 
     if (sort && order) {
       query += ` ORDER BY ${sort} ${order}`;
@@ -55,14 +55,14 @@ class Producto {
   static async getById(id) {
     const connection = await db.createConnection();
     const [rows] = await connection.execute(
-      "SELECT id_producto, nombre, descripcion, id_categoria, precio, cantidad, url_img, calificaciones, id_color, talla,  created_at, deleted, deleted_at, updated_at FROM productos WHERE id_producto = ? AND deleted = 0",
+      "SELECT id_producto, nombre, descripcion, id_categoria, precio, cantidad_disponible, url_img, calificaciones, id_color, talla,  created_at, deleted, deleted_at, updated_at FROM productos WHERE id_producto = ? AND deleted = 0",
       [id]
     );
     connection.end();
 
     if (rows.length > 0) {
       const row = rows[0];
-      return new Usuario({
+      return new Producto({
         id_producto: row.id_producto,
         nombre: row.nombre,
         descripcion: row.descripcion,
@@ -172,7 +172,7 @@ class Producto {
 
     const createdAt = new Date();
     const [result] = await connection.execute(
-      "INSERT INTO productos (nombre, descripcion, id_categoria, precio, cantidad, url_img, calificaciones, id_color, talla,  created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO productos (nombre, descripcion, id_categoria, precio, cantidad_disponible, url_img, calificaciones, id_color, talla,  created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [
         this.nombre,
         this.nombre,

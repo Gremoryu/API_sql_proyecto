@@ -58,7 +58,7 @@ const getById = async (req, res) => {
 
 const create = async (req, res) => {
   try {
-    const Producto = new Producto({
+    const producto = new Producto({
       nombre: req.body.nombre,
       descripcion: req.body.descripcion,
       id_categoria: req.body.id_categoria,
@@ -70,11 +70,11 @@ const create = async (req, res) => {
       talla: req.body.talla,
     });
 
-    await Producto.save();
+    await producto.save();
 
     return res.status(200).json({
       message: "Producto creado exitosamente",
-      Producto,
+      producto,
     });
   } catch (error) {
     return res.status(500).json({
