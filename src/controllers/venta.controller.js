@@ -7,7 +7,7 @@ const index = async (req, res) => {
     const offset = (page - 1) * limit;
     const { sort, order } = req.query;
 
-    const ventas = await venta.getAll({ offset, limit }, { sort, order });
+    const ventas = await Venta.getAll({ offset, limit }, { sort, order });
 
     let response = {
       message: "ventas obtenidas exitosamente",
@@ -36,7 +36,7 @@ const index = async (req, res) => {
 const getById = async (req, res) => {
   try {
     const idventa = req.params.id;
-    const venta = await venta.getById(idventa);
+    const venta = await Venta.getById(idventa);
 
     if (!venta) {
       return res.status(404).json({
@@ -58,7 +58,7 @@ const getById = async (req, res) => {
 
 const create = async (req, res) => {
   try {
-    const venta = new venta({
+    const venta = new Venta({
       id_venta_producto: req.body.id_venta_producto,
       cantidad: req.body.cantidad,
       total: req.body.total,
@@ -85,7 +85,7 @@ const deleteLogico = async (req, res) => {
   try {
     const idventa = req.params.id;
 
-    await venta.deleteLogicoById(idventa);
+    await Venta.deleteLogicoById(idventa);
 
     return res.status(200).json({
       message: "se eliminó la venta correctamente",

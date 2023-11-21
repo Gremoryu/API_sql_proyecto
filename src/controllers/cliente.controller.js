@@ -1,6 +1,7 @@
 const Cliente = require("../models/cliente.model");
 const bcrypt = require("bcrypt");
 const saltosBcrypt = parseInt(process.env.SALTOS);
+const db = require("../configs/db.config");
 
 const index = async (req, res) => {
   try {
@@ -58,23 +59,36 @@ const getById = async (req, res) => {
   }
 };
 
-const create = async (req, res) => {
+const createwithTransaction = async (req, res) => {
+  const connection = await db.createConnection();
+
   try {
+    await connection.beginTransaction();
+
     const cliente = new Cliente({
       nombre: req.body.nombre,
-      a_paterno: req.body.a_p,
-      a_materno: req.body.a_m,
+      apellido_paterno: req.body.apellido_paterno,
+      apellido_materno: req.body.apellido_materno,
       email: req.body.email,
-      password: req.body.password,
+      password: bcrypt.hashSync(req.body.password, saltosBcrypt),
     });
 
-    await cliente.save();
+    const id = await cliente.savewithTransaction(connection);
+
+    for (c of req.body.contacto) {
+      const contacto = new Contacto({ id, ...c });
+      await contacto.savewithTransaction(connection);
+    }
+
+    await connection.commit();
 
     return res.status(200).json({
-      message: "Cliente creado exitosamente",
+      message: "Registro exitoso",
       cliente,
     });
   } catch (error) {
+
+    await connection.rollback();
     return res.status(500).json({
       message: "ocurrió un error al crear el Cliente",
       error: error.message,
@@ -144,7 +158,7 @@ const update = async (req, res) => {
 module.exports = {
   index,
   getById,
-  create,
+  createwithTransaction,
   delete: deleteLogico,
   update,
 };
