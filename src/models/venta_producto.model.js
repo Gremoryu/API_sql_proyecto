@@ -1,11 +1,12 @@
-const db = require("../configs/db");
+const db = require("../configs/db.config");
 
 class VentaProducto {
   constructor({
     id,
+    id_venta,
     id_producto,
     cantidad,
-    precio,
+    total,
     subtotal,
     descuento,
     created_at,
@@ -14,9 +15,10 @@ class VentaProducto {
     updated_at,
   }) {
     this.id = id;
+    this.id_venta = id_venta;
     this.id_producto = id_producto;
     this.cantidad = cantidad;
-    this.precio = precio;
+    this.total = total;
     this.subtotal = subtotal;
     this.descuento = descuento;
     this.created_at = created_at;
@@ -28,7 +30,7 @@ class VentaProducto {
   static async getById(id) {
     const connection = await db.createConnection();
     const [rows] = await connection.execute(
-      "SELECT id, id_producto, cantidad, precio, subtotal, descuento, created_at, deleted, deleted_at, updated_at FROM venta_producto WHERE id = ? AND deleted = 0",
+      "SELECT id, id_venta,id_producto, cantidad, total, subtotal, descuento, created_at, deleted, deleted_at, updated_at FROM venta_producto WHERE id = ? AND deleted = 0",
       [id]
     );
     connection.end();
@@ -40,18 +42,31 @@ class VentaProducto {
 
     throw new Error("no existe la venta");
   }
-  static async savewithTransaction(connection, ventaProducto) {
+  async save() {
+    const connection = await db.createConnection();
+
     const created_at = new Date();
     const [result] = await connection.execute(
-      "INSERT INTO venta_producto (cantidad, precio, subtotal, descuento, created_at) VALUES (?, ?, ?, ?, ?)",
-      [this.cantidad, this.precio, this.subtotal, this.descuento, created_at]
+      "INSERT INTO venta_producto (id_venta, id_producto, cantidad, total, subtotal, descuento, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [
+        this.id_venta,
+        this.id_producto,
+        this.cantidad,
+        this.total,
+        this.subtotal,
+        this.descuento,
+        created_at,
+      ]
     );
 
-    if (result.affectedRows == 0) {
+    if (result.insertId == 0) {
       throw new Error("no se creó la venta");
     }
 
-    return result.insertId;
+    this.id = result.insertId;
+    this.created_at = created_at;
+
+    return this.id;
   }
 
   static async deleteLogicoById(id) {
@@ -85,15 +100,15 @@ class VentaProducto {
     return;
   }
 
-  static async updatebyId(id, { cantidad, precio, subtotal, descuento}) {
+  static async updatebyId(id, { cantidad, total, subtotal, descuento }) {
     const connection = await db.createConnection();
 
     const updated_at = new Date();
     const [result] = await connection.execute(
-      "UPDATE venta_producto SET cantidad = ?, precio = ?, subtotal = ?, descuento = ?, updated_at = ? WHERE id = ?",
+      "UPDATE venta_producto SET cantidad = ?, total = ?, subtotal = ?, descuento = ?, updated_at = ? WHERE id = ?",
       [
         this.cantidad,
-        this.precio,
+        this.total,
         this.subtotal,
         this.descuento,
         updated_at,

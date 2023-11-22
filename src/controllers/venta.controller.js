@@ -1,4 +1,5 @@
 const Venta = require("../models/venta.model");
+const VentaProducto = require("../models/venta_producto.model");
 
 const index = async (req, res) => {
   try {
@@ -59,14 +60,18 @@ const getById = async (req, res) => {
 const create = async (req, res) => {
   try {
     const venta = new Venta({
-      id_venta_producto: req.body.id_venta_producto,
       cantidad: req.body.cantidad,
       total: req.body.total,
       subtotal: req.body.subtotal,
       descuento: req.body.descuento,
     });
 
-    await venta.save();
+    const id_venta = await venta.save();
+
+    for(venta_p of req.body.venta_producto){
+      const venta_producto = new VentaProducto({id_venta, ...venta_p});
+      await venta_producto.save();
+    }
 
     return res.status(200).json({
       message: "venta creada exitosamente",
@@ -115,6 +120,38 @@ const deleteFisico = async (req, res) => {
   }
 };
 
+const countGanancies = async (req, res) => {
+  try {
+    const totalganancias = await Venta.countGanancies();
+
+    return res.status(200).json({
+      message: "total de ganancias obtenidas exitosamente",
+      total: totalganancias,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "ocurrió un error al obtener el total de ganancias",
+      error: error.message,
+    });
+  }
+}
+
+const countVentas = async (req, res) => {
+  try {
+    const totalventas = await Venta.countVentas();
+
+    return res.status(200).json({
+      message: "total de ventas obtenidas exitosamente",
+      total: totalventas,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "ocurrió un error al obtener el total de ventas",
+      error: error.message,
+    });
+  }
+}
+
 const update = async (req, res) => {
   try {
     const idventa = req.params.id;
@@ -145,4 +182,6 @@ module.exports = {
   create,
   delete: deleteLogico,
   update,
+  countGanancies,
+  countVentas,
 };
