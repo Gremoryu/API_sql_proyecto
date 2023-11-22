@@ -172,9 +172,8 @@ class Producto {
 
     const createdAt = new Date();
     const [result] = await connection.execute(
-      "INSERT INTO productos (nombre, descripcion, id_categoria, precio, cantidad_disponible, url_img, rating, id_color, talla,  created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO productos (nombre, descripcion, id_categoria, precio, cantidad_disponible, url_img, rating, id_color, talla, created_at, deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)",
       [
-        this.nombre,
         this.nombre,
         this.descripcion,
         this.id_categoria,

@@ -65,7 +65,7 @@ const create = async (req, res) => {
       precio: req.body.precio,
       cantidad_disponible: req.body.cantidad_disponible,
       url_img: req.body.url_img,
-      calificaciones: req.body.calificaciones,
+      rating: req.body.rating,
       id_color: req.body.id_color,
       talla: req.body.talla,
     });
@@ -128,7 +128,7 @@ const update = async (req, res) => {
       precio: req.body.precio,
       cantidad_disponible: req.body.cantidad_disponible,
       url_img: req.body.url_img,
-      calificaciones: req.body.calificaciones,
+      rating: req.body.rating,
       id_color: req.body.id_color,
       talla: req.body.talla,
     };
