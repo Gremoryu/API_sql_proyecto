@@ -108,7 +108,7 @@ const deleteFisico = async (req, res) => {
     await Producto.deleteFisicoById(idProducto);
 
     return res.status(200).json({
-      message: "se eliminó el Producto correctamente",
+      message: "se eliminó el Producto permanentemente",
     });
   } catch (error) {
     return res.status(500).json({
@@ -122,22 +122,20 @@ const update = async (req, res) => {
   try {
     const idProducto = req.params.id;
     const datosActualizar = {
-      nombre: req.body.nombre,
-      descripcion: req.body.descripcion,
-      id_categoria: req.body.id_categoria,
-      precio: req.body.precio,
-      cantidad_disponible: req.body.cantidad_disponible,
-      url_img: req.body.url_img,
-      rating: req.body.rating,
-      id_color: req.body.id_color,
-      talla: req.body.talla,
+      ...req.body,
     };
 
-    await Producto.updateById(idProducto, datosActualizar);
+    const affectedRows = await Producto.updateById(idProducto, datosActualizar);
 
-    return res.status(200).json({
-      message: "el Producto se actualizó correctamente",
-    });
+    if (affectedRows > 0) {
+      return res.status(200).json({
+        message: "el Producto se actualizó correctamente",
+      });
+    } else {
+      return res.status(404).json({
+        message: `no se encontró el Producto con id ${idProducto}`,
+      });
+    }
   } catch (error) {
     return res.status(500).json({
       message: "ocurrió un error al actualizar el Producto",

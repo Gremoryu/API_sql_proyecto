@@ -87,7 +87,7 @@ class Producto {
     const connection = await db.createConnection();
 
     const deletedAt = new Date();
-    const [result] = connection.execute(
+    const [result] = await connection.execute(
       "UPDATE productos SET deleted = 1, deleted_at = ? WHERE id = ?",
       [deletedAt, id]
     );
@@ -98,7 +98,7 @@ class Producto {
       throw new Error("No se pudo eliminar el producto");
     }
 
-    return;
+    return result.affectedRows;
   }
 
   static async deleteFisicoById(id) {
@@ -116,36 +116,19 @@ class Producto {
     return;
   }
 
-  static async updateById(
-    id,
-    {
-      nombre,
-      descripcion,
-      id_categoria,
-      precio,
-      cantidad_disponible,
-      url_img,
-      rating,
-      id_color,
-      talla,
-    }
-  ) {
+  static async updateById(id, datosActualizar) {
     const connection = await db.createConnection();
 
-    const updatedAt = new Date();
+    const fieldsToUpdate = Object.keys(datosActualizar).map(key => `${key} = ?`).join(', ');
+    const valuesToUpdate = Object.values(datosActualizar);
+
+    const updated_at = new Date();
+    valuesToUpdate.push(updated_at);
+
     const [result] = await connection.execute(
-      "UPDATE productos SET nombre = ?, descripcion = ?, id_categoria = ?, precio = ?, cantidad_disponible = ?, url_img = ?, rating = ?, id_color = ?, talla = ?, updated_at = ? WHERE id = ?",
+    `UPDATE productos SET ${fieldsToUpdate}, updated_at = ? WHERE id = ?`,
       [
-        nombre,
-        descripcion,
-        id_categoria,
-        precio,
-        cantidad_disponible,
-        url_img,
-        rating,
-        id_color,
-        talla,
-        updatedAt,
+        ...valuesToUpdate,
         id,
       ]
     );
@@ -154,7 +137,7 @@ class Producto {
       throw new Error("no se actualizó el producto");
     }
 
-    return;
+    return result.affectedRows;
   }
 
   static async count() {
