@@ -36,28 +36,7 @@ const index = async (req, res) => {
   }
 };
 
-const getById = async (req, res) => {
-  try {
-    const idCliente = req.params.id;
-    const cliente = await Cliente.getById(idCliente);
 
-    if (!cliente) {
-      return res.status(404).json({
-        message: `no se encontró el Cliente con id ${idCliente}`,
-      });
-    }
-
-    return res.status(200).json({
-      message: "Cliente encontrado exitosamente",
-      cliente,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      message: "ocurrió un error al obtener el Cliente",
-      error: error.message,
-    });
-  }
-};
 
 const createwithTransaction = async (req, res) => {
   const connection = await db.createConnection();
@@ -96,6 +75,23 @@ const createwithTransaction = async (req, res) => {
   }
 };
 
+const getById = async (req, res) => {
+  try {
+    const idCliente = req.params.id;
+
+    const cliente = await Cliente.getById(idCliente);
+
+    return res.status(200).json({
+      message: "Cliente obtenido exitosamente",
+      data: cliente,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "ocurrió un error al obtener el Cliente",
+      error: error.message,
+    });
+  }
+}
 
 const deleteLogico = async (req, res) => {
   try {
@@ -157,7 +153,6 @@ const update = async (req, res) => {
 
 module.exports = {
   index,
-  getById,
   createwithTransaction,
   delete: deleteLogico,
   update,

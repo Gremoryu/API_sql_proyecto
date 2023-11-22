@@ -2,14 +2,14 @@ const db = require("../configs/db.config");
 
 class Producto {
   constructor({
-    id_producto,
+    id,
     nombre,
     descripcion,
     id_categoria,
     precio,
     cantidad_disponible,
     url_img,
-    calificaciones,
+    rating,
     id_color,
     talla,
     created_at,
@@ -17,14 +17,14 @@ class Producto {
     deleted_at,
     updated_at,
   }) {
-    this.id_producto = id_producto;
+    this.id = id;
     this.nombre = nombre;
     this.descripcion = descripcion;
     this.id_categoria = id_categoria;
     this.precio = precio;
     this.cantidad_disponible = cantidad_disponible;
     this.url_img = url_img;
-    this.calificaciones = calificaciones;
+    this.rating = rating;
     this.id_color = id_color;
     this.talla = talla;
     this.created_at = created_at;
@@ -36,7 +36,7 @@ class Producto {
   static async getAll({ offset, limit }, { sort, order }) {
     const connection = await db.createConnection();
     let query =
-      "SELECT id_producto, nombre, descripcion, id_categoria, precio, cantidad_disponible, url_img, calificaciones, id_color, talla,  created_at, deleted, deleted_at, updated_at FROM productos WHERE deleted = 0";
+      "SELECT id, nombre, descripcion, id_categoria, precio, cantidad_disponible, url_img, rating, id_color, talla,  created_at, deleted, deleted_at, updated_at FROM productos WHERE deleted = 0";
 
     if (sort && order) {
       query += ` ORDER BY ${sort} ${order}`;
@@ -55,7 +55,7 @@ class Producto {
   static async getById(id) {
     const connection = await db.createConnection();
     const [rows] = await connection.execute(
-      "SELECT id_producto, nombre, descripcion, id_categoria, precio, cantidad_disponible, url_img, calificaciones, id_color, talla,  created_at, deleted, deleted_at, updated_at FROM productos WHERE id_producto = ? AND deleted = 0",
+      "SELECT id, nombre, descripcion, id_categoria, precio, cantidad_disponible, url_img, rating, id_color, talla,  created_at, deleted, deleted_at, updated_at FROM productos WHERE id = ? AND deleted = 0",
       [id]
     );
     connection.end();
@@ -63,14 +63,14 @@ class Producto {
     if (rows.length > 0) {
       const row = rows[0];
       return new Producto({
-        id_producto: row.id_producto,
+        id: row.id,
         nombre: row.nombre,
         descripcion: row.descripcion,
         id_categoria: row.id_categoria,
         precio: row.precio,
         cantidad_disponible: row.cantidad_disponible,
         url_img: row.url_img,
-        calificaciones: row.calificaciones,
+        rating: row.rating,
         id_color: row.id_color,
         talla: row.talla,
         createdAt: row.created_at,
@@ -88,7 +88,7 @@ class Producto {
 
     const deletedAt = new Date();
     const [result] = connection.execute(
-      "UPDATE productos SET deleted = 1, deleted_at = ? WHERE id_producto = ?",
+      "UPDATE productos SET deleted = 1, deleted_at = ? WHERE id = ?",
       [deletedAt, id]
     );
 
@@ -104,7 +104,7 @@ class Producto {
   static async deleteFisicoById(id) {
     const connection = await db.createConnection();
     const [result] = await connection.execute(
-      "DELETE FROM productos WHERE id_producto = ?",
+      "DELETE FROM productos WHERE id = ?",
       [id]
     );
     connection.end();
@@ -125,7 +125,7 @@ class Producto {
       precio,
       cantidad_disponible,
       url_img,
-      calificaciones,
+      rating,
       id_color,
       talla,
     }
@@ -134,7 +134,7 @@ class Producto {
 
     const updatedAt = new Date();
     const [result] = await connection.execute(
-      "UPDATE productos SET nombre = ?, descripcion = ?, id_categoria = ?, precio = ?, cantidad_disponible = ?, url_img = ?, calificaciones = ?, id_color = ?, talla = ?, updated_at = ? WHERE id_producto = ?",
+      "UPDATE productos SET nombre = ?, descripcion = ?, id_categoria = ?, precio = ?, cantidad_disponible = ?, url_img = ?, rating = ?, id_color = ?, talla = ?, updated_at = ? WHERE id = ?",
       [
         nombre,
         descripcion,
@@ -142,7 +142,7 @@ class Producto {
         precio,
         cantidad_disponible,
         url_img,
-        calificaciones,
+        rating,
         id_color,
         talla,
         updatedAt,
@@ -172,7 +172,7 @@ class Producto {
 
     const createdAt = new Date();
     const [result] = await connection.execute(
-      "INSERT INTO productos (nombre, descripcion, id_categoria, precio, cantidad_disponible, url_img, calificaciones, id_color, talla,  created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO productos (nombre, descripcion, id_categoria, precio, cantidad_disponible, url_img, rating, id_color, talla,  created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [
         this.nombre,
         this.nombre,
@@ -181,7 +181,7 @@ class Producto {
         this.precio,
         this.cantidad_disponible,
         this.url_img,
-        this.calificaciones,
+        this.rating,
         this.id_color,
         this.talla,
         createdAt,

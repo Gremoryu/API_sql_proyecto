@@ -2,14 +2,14 @@ const db = require("../configs/db.config");
 
 class Categoria {
   constructor({
-    id_categoria,
+    id,
     categoria,
     created_at,
     updated_at,
     deleted,
     deleted_at
   }) {
-    this.id_categoria = id_categoria;
+    this.id = id;
     this.categoria = categoria;
     this.created_at = created_at;
     this.updated_at = updated_at;
@@ -20,7 +20,7 @@ class Categoria {
   static async getAll({ offset, limit }, { sort, order }) {
     const connection = await db.createConnection();
     let query =
-      "SELECT id_categoria, categoria, deleted, created_at, updated_at, deleted_at FROM categoria WHERE deleted = 0";
+      "SELECT id, categoria, deleted, created_at, updated_at, deleted_at FROM categoria WHERE deleted = 0";
 
     if (sort && order) {
       query += ` ORDER BY ${sort} ${order}`;
@@ -39,7 +39,7 @@ class Categoria {
   static async getById(id) {
     const connection = await db.createConnection();
     const [rows] = await connection.execute(
-      "SELECT id_categoria, categoria, deleted, created_at, updated_at, deleted_at FROM categoria WHERE id_categoria = ? AND deleted = 0",
+      "SELECT id, categoria, deleted, created_at, updated_at, deleted_at FROM categoria WHERE id = ? AND deleted = 0",
       [id]
     );
     connection.end();
@@ -47,7 +47,7 @@ class Categoria {
     if (rows.length > 0) {
       const row = rows[0];
       return new Usuario({
-        id_categoria: row.id_categoria,
+        id: row.id,
         categoria: row.categoria,
         deleted: row.deleted,
         createdAt: row.created_at,
@@ -64,7 +64,7 @@ class Categoria {
 
     const deletedAt = new Date();
     const [result] = connection.execute(
-      "UPDATE categoria SET deleted = 1, deleted_at = ? WHERE id_categoria = ?",
+      "UPDATE categoria SET deleted = 1, deleted_at = ? WHERE id = ?",
       [deletedAt, id]
     );
 
@@ -80,7 +80,7 @@ class Categoria {
   static async deleteFisicoById(id) {
     const connection = await db.createConnection();
     const [result] = await connection.execute(
-      "DELETE FROM categoria WHERE id_categoria = ?",
+      "DELETE FROM categoria WHERE id = ?",
       [id]
     );
     connection.end();
@@ -97,7 +97,7 @@ class Categoria {
 
     const updatedAt = new Date();
     const [result] = await connection.execute(
-      "UPDATE categoria SET categoria = ?, updated_at = ? WHERE id_categoria = ?",
+      "UPDATE categoria SET categoria = ?, updated_at = ? WHERE id = ?",
       [categoria, updatedAt, id]
     );
 

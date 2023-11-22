@@ -29,6 +29,22 @@ class Cliente {
     this.email = email;
   }
 
+  static async getById(id) {
+    const connection = await db.createConnection();
+    const [rows] = await connection.execute(
+      "SELECT id, nombre, apellido_paterno, apellido_materno, id_venta, id_contacto, updated_at, created_at, deleted, deleted_at, email FROM clientes WHERE id = ? AND deleted = 0",
+      [id]
+    );
+    connection.end();
+
+    if (rows.length > 0) {
+      const row = rows[0];
+      return new Cliente(row);
+    }
+
+  }
+
+
   static async getByEmail(email) {
     const connection = await db.createConnection()
     const query = 'SELECT id, email, password, deleted, created_at, updated_at, deleted_at FROM clientes WHERE email = ? AND deleted = 0'
