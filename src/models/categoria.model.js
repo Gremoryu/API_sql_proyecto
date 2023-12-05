@@ -20,7 +20,7 @@ class Categoria {
   static async getAll({ offset, limit }, { sort, order }) {
     const connection = await db.createConnection();
     let query =
-      "SELECT id, categoria, deleted, created_at, updated_at, deleted_at FROM categoria WHERE deleted = 0";
+      "SELECT id, categoria, deleted, created_at, updated_at, deleted_at FROM categorias WHERE deleted = 0";
 
     if (sort && order) {
       query += ` ORDER BY ${sort} ${order}`;
@@ -39,7 +39,7 @@ class Categoria {
   static async getById(id) {
     const connection = await db.createConnection();
     const [rows] = await connection.execute(
-      "SELECT id, categoria, deleted, created_at, updated_at, deleted_at FROM categoria WHERE id = ? AND deleted = 0",
+      "SELECT id, categoria, deleted, created_at, updated_at, deleted_at FROM categorias WHERE id = ? AND deleted = 0",
       [id]
     );
     connection.end();
@@ -64,7 +64,7 @@ class Categoria {
 
     const deletedAt = new Date();
     const [result] = connection.execute(
-      "UPDATE categoria SET deleted = 1, deleted_at = ? WHERE id = ?",
+      "UPDATE categorias SET deleted = 1, deleted_at = ? WHERE id = ?",
       [deletedAt, id]
     );
 
@@ -80,7 +80,7 @@ class Categoria {
   static async deleteFisicoById(id) {
     const connection = await db.createConnection();
     const [result] = await connection.execute(
-      "DELETE FROM categoria WHERE id = ?",
+      "DELETE FROM categorias WHERE id = ?",
       [id]
     );
     connection.end();
@@ -92,16 +92,20 @@ class Categoria {
     return;
   }
 
-  static async updateById(id, { categoria, a_paterno, a_materno, email, password }) {
+  static async updateById(id, { categoria }) {
     const connection = await db.createConnection();
 
     const updatedAt = new Date();
+    const query = "UPDATE categorias SET categoria = ?, updated_at = ? WHERE id = ?";
     const [result] = await connection.execute(
-      "UPDATE categoria SET categoria = ?, updated_at = ? WHERE id = ?",
+      query,
       [categoria, updatedAt, id]
     );
+    const [trigger] = await connection.query(
+      "CREATE TRIGGER update_categoria BEFORE UPDATE ON categorias FOR EACH ROW SET NEW.updated_at = NOW();"
+    );
 
-    if (result.affectedRows == 0) {
+    if (result.affectedRows == 0 && trigger.affectedRows == 0) {
       throw new Error("no se actualizó la categoria");
     }
 
@@ -111,7 +115,7 @@ class Categoria {
   static async count() {
     const connection = await db.createConnection();
     const [rows] = await connection.query(
-      "SELECT COUNT(*) AS totalCount FROM categoria WHERE deleted = 0"
+      "SELECT COUNT(*) AS totalCount FROM categorias WHERE deleted = 0"
     );
     connection.end();
 
@@ -123,7 +127,7 @@ class Categoria {
 
     const createdAt = new Date();
     const [result] = await connection.execute(
-      "INSERT INTO categoria (categoria, created_at) VALUES (?, ?)",
+      "INSERT INTO categorias (categoria, created_at, deleted) VALUES (?, ?, 0)",
       [
         this.categoria,
         createdAt,

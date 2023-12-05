@@ -11,5 +11,6 @@ const config = {
 const createConnection = async () => await mysql.createConnection(config)
 
 module.exports = {
-    createConnection
+    createConnection,
+    config
 }

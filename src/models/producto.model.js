@@ -101,6 +101,30 @@ class Producto {
     return result.affectedRows;
   }
 
+  static async getAllDeleted() {
+    const connection = await db.createConnection();
+    // const query = `CREATE PROCEDURE getProductsDeleted() BEGIN SELECT * FROM productos WHERE deleted = 1; END`;
+    // const [rows] = await connection.query(query);
+    const [deleted] = await connection.execute("CALL getProductsDeleted()");
+    connection.end();
+
+    return deleted;
+  }
+
+  static async countProducts() {
+    const connection = await db.createConnection();
+    // const borrar = `DROP PROCEDURE IF EXISTS countProducts`;
+    // const query = await connection.query(borrar);
+
+    // const query2 = `CREATE PROCEDURE countProducts() BEGIN SELECT SUM(cantidad_disponible) AS totalCount FROM productos WHERE deleted = 0; END`;
+    // const [rows] = await connection.query(query2);
+
+    const [products] = await connection.execute("CALL countProducts()");
+    connection.end();
+
+    return products;
+  }
+
   static async deleteFisicoById(id) {
     const connection = await db.createConnection();
     const [result] = await connection.execute(
@@ -119,21 +143,24 @@ class Producto {
   static async updateById(id, datosActualizar) {
     const connection = await db.createConnection();
 
-    const fieldsToUpdate = Object.keys(datosActualizar).map(key => `${key} = ?`).join(', ');
+    const fieldsToUpdate = Object.keys(datosActualizar)
+      .map((key) => `${key} = ?`)
+      .join(", ");
     const valuesToUpdate = Object.values(datosActualizar);
 
     const updated_at = new Date();
     valuesToUpdate.push(updated_at);
 
     const [result] = await connection.execute(
-    `UPDATE productos SET ${fieldsToUpdate}, updated_at = ? WHERE id = ?`,
-      [
-        ...valuesToUpdate,
-        id,
-      ]
+      `UPDATE productos SET ${fieldsToUpdate}, updated_at = ? WHERE id = ?`,
+      [...valuesToUpdate, id]
     );
 
-    if (result.affectedRows == 0) {
+    // const [trigger] = await connection.query(
+    //   "CREATE TRIGGER update_productos BEFORE UPDATE ON productos FOR EACH ROW SET NEW.updated_at = NOW();"
+    // );
+
+    if (result.affectedRows == 0 && trigger.affectedRows == 0) {
       throw new Error("no se actualizó el producto");
     }
 

@@ -1,6 +1,6 @@
 const Venta = require("../models/venta.model");
 const VentaProducto = require("../models/venta_producto.model");
-
+const db = require("../configs/db.config");
 const index = async (req, res) => {
   try {
     const page = parseInt(req.query.page);
@@ -57,8 +57,12 @@ const getById = async (req, res) => {
   }
 };
 
-const create = async (req, res) => {
+const createwithTransaction = async (req, res) => {
+  const connection = await db.createConnection();
+
   try {
+    await connection.beginTransaction();
+
     const venta = new Venta({
       cantidad: req.body.cantidad,
       total: req.body.total,
@@ -66,25 +70,26 @@ const create = async (req, res) => {
       descuento: req.body.descuento,
     });
 
-    const id_venta = await venta.save();
+    const id_venta = await venta.saveWithTransaction(connection);
 
-    for(venta_p of req.body.venta_producto){
-      const venta_producto = new VentaProducto({id_venta, ...venta_p});
-      await venta_producto.save();
+    for (venta_p of req.body.venta_producto) {
+      const venta_producto = new VentaProducto({ id_venta, ...venta_p });
+      await venta_producto.saveWithTransaction(connection);
     }
 
+    await connection.commit();
     return res.status(200).json({
       message: "venta creada exitosamente",
       venta,
     });
   } catch (error) {
+    await connection.rollback();
     return res.status(500).json({
       message: "ocurrió un error al crear la venta",
       error: error.message,
     });
   }
 };
-
 
 const deleteLogico = async (req, res) => {
   try {
@@ -120,6 +125,23 @@ const deleteFisico = async (req, res) => {
   }
 };
 
+const getVentasProducto = async (req, res) => {
+  try {
+    const id_producto = req.params.id;
+    const ventas = await VentaProducto.getCantidadVentasProducto(id_producto);
+
+    return res.status(200).json({
+      message: "ventas obtenidas exitosamente",
+      ventas,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "ocurrió un error al obtener las ventas",
+      error: error.message,
+    });
+  }
+};
+
 const countGanancies = async (req, res) => {
   try {
     const totalganancias = await Venta.countGanancies();
@@ -134,7 +156,7 @@ const countGanancies = async (req, res) => {
       error: error.message,
     });
   }
-}
+};
 
 const countVentas = async (req, res) => {
   try {
@@ -150,17 +172,17 @@ const countVentas = async (req, res) => {
       error: error.message,
     });
   }
-}
+};
 
 const update = async (req, res) => {
   try {
     const idventa = req.params.id;
     const datosActualizar = {
-        id_venta_producto: req.body.id_venta_producto,
-        cantidad: req.body.cantidad,
-        total: req.body.total,
-        subtotal: req.body.subtotal,
-        descuento: req.body.descuento,
+      id_venta_producto: req.body.id_venta_producto,
+      cantidad: req.body.cantidad,
+      total: req.body.total,
+      subtotal: req.body.subtotal,
+      descuento: req.body.descuento,
     };
 
     await venta.updateById(idventa, datosActualizar);
@@ -179,9 +201,10 @@ const update = async (req, res) => {
 module.exports = {
   index,
   getById,
-  create,
+  createwithTransaction,
   delete: deleteLogico,
   update,
+  getVentasProducto,
   countGanancies,
   countVentas,
 };

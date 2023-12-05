@@ -9,13 +9,13 @@ app.use(express.json())
 app.use(cors());
 
 const clientesRouter = require('./src/routes/clientes.route')
-const productoRouter = require('./src/routes/producto.route')
-const categoriaRouter = require('./src/routes/categoria.route')
-const ventaRouter = require('./src/routes/venta.route')
+const productoRouter = require('./src/routes/productos.route')
+const categoriaRouter = require('./src/routes/categorias.route')
+const ventaRouter = require('./src/routes/ventas.route')
 
 app.use('/clientes', clientesRouter)
-app.use('/producto', productoRouter)
-app.use('/categoria', categoriaRouter)
+app.use('/productos', productoRouter)
+app.use('/categorias', categoriaRouter)
 app.use('/ventas', ventaRouter)
 
 

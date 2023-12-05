@@ -75,6 +75,24 @@ const createwithTransaction = async (req, res) => {
   }
 };
 
+const getByEmail = async (req, res) => {
+  try {
+    const emailCliente = req.params.email;
+
+    const cliente = await Cliente.getByEmail(emailCliente);
+
+    return res.status(200).json({
+      message: "Cliente obtenido exitosamente",
+      data: cliente,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "ocurrió un error al obtener el Cliente",
+      error: error.message,
+    });
+  }
+}
+
 const getById = async (req, res) => {
   try {
     const idCliente = req.params.id;
@@ -88,6 +106,24 @@ const getById = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: "ocurrió un error al obtener el Cliente",
+      error: error.message,
+    });
+  }
+}
+
+const getContactoById = async (req, res) => {
+  try {
+    const idCliente = req.params.id;
+
+    const contacto = await Cliente.getContactoById(idCliente);
+
+    return res.status(200).json({
+      message: "Contacto obtenido exitosamente",
+      data: contacto,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "ocurrió un error al obtener el Contacto",
       error: error.message,
     });
   }
@@ -153,6 +189,8 @@ const update = async (req, res) => {
 
 module.exports = {
   index,
+  getByEmail,
+  getContactoById,
   createwithTransaction,
   delete: deleteLogico,
   update,

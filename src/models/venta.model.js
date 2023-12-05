@@ -122,26 +122,28 @@ class Venta {
 
   static async countGanancies() {
     const connection = await db.createConnection();
-    const [rows] = await connection.query(
-      "SELECT SUM(total) AS totalGanancias FROM ventas WHERE deleted = 0"
-    );
+    // const [rows] = await connection.query( "CREATE PROCEDURE `countGanancias`() BEGIN SELECT SUM(total) AS totalGanancias FROM ventas WHERE deleted = 0; END;"
+    // );
+
+    const totalGanancias = await connection.query("SELECT getTotalGanacies() AS totalGanancias");
     connection.end();
 
-    return rows[0].totalGanancias;
+    return totalGanancias;
   }
 
   static async countVentas() {
     const connection = await db.createConnection();
-    const [rows] = await connection.query(
-      "SELECT SUM(cantidad) AS totalCount FROM ventas WHERE deleted = 0"
-    );
+    // const [rows] = await connection.query(
+    //   "CREATE PROCEDURE `countVentas`() BEGIN SELECT COUNT(*) AS totalCount FROM ventas WHERE deleted = 0; END;"
+    // );
+
+    const totalCount = await connection.query("CALL countVentas()");
     connection.end();
 
-    return rows[0].totalCount;
+    return totalCount;
   }
 
-  async save() {
-    const connection = await db.createConnection();
+  async saveWithTransaction(connection) {
 
     const createdAt = new Date();
     const [result] = await connection.execute(
@@ -154,8 +156,6 @@ class Venta {
         createdAt,
       ]
     );
-
-    connection.end();
 
     if (result.insertId === 0) {
       throw new Error("No se insertó la venta");

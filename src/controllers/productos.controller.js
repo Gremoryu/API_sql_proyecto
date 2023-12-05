@@ -56,6 +56,24 @@ const getById = async (req, res) => {
   }
 };
 
+const getProductsDeleted = async (req, res) => {
+  try {
+    const productos = await Producto.getAllDeleted();
+
+    let response = {
+      message: "productos obtenidos exitosamente",
+      data: productos,
+    };
+
+    return res.status(200).json(response);
+  } catch (error) {
+    return res.status(500).json({
+      message: "ocurrió un error al obtener los productos",
+      error: error.message,
+    });
+  }
+};
+
 const create = async (req, res) => {
   try {
     const producto = new Producto({
@@ -83,6 +101,22 @@ const create = async (req, res) => {
     });
   }
 };
+
+const getTotalProducts = async (req, res) => {
+  try {
+    const totalProductos = await Producto.countProducts();
+
+    return res.status(200).json({
+      message: "total de productos obtenido exitosamente",
+      totalProductos,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "ocurrió un error al obtener el total de productos",
+      error: error.message,
+    });
+  }
+}
 
 const deleteLogico = async (req, res) => {
   try {
@@ -150,4 +184,6 @@ module.exports = {
   create,
   delete: deleteLogico,
   update,
+  getProductsDeleted,
+  getTotalProducts
 };

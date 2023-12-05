@@ -69,6 +69,15 @@ class Cliente {
     }
   }
 
+  static async getContactoById(id) {
+    const connection = await db.createConnection();
+    const [rows] = await connection.execute("CALL getContactoCliente(?)", [id]);
+    connection.end();
+
+    return rows[0];
+
+  }
+
   static async deleteLogicoById(id) {
     const connection = await db.createConnection();
 

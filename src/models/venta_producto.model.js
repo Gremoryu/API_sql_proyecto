@@ -42,8 +42,18 @@ class VentaProducto {
 
     throw new Error("no existe la venta");
   }
-  async save() {
+
+  static async getCantidadVentasProducto(id_producto) {
     const connection = await db.createConnection();
+    const [rows] = await connection.query("SELECT getCantidadVentasProducto(?) AS cantidadVentas", [
+      id_producto,
+    ]);
+    connection.end();
+
+    return rows[0].cantidadVentas
+  }
+
+  async saveWithTransaction(connection) {
 
     const created_at = new Date();
     const [result] = await connection.execute(
