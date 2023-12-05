@@ -1,10 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const clientesController = require('../controllers/cliente.controller');
+const clientesController = require('../controllers/clientes.controller');
 
-router.get('/', clientesController.index);
-router.get('/:id', clientesController.getById);
-router.post('/', clientesController.create);
+router.get('/:id', clientesController.getContactoById);
+router.post('/', clientesController.createwithTransaction);
 router.delete('/:id', clientesController.delete);
 router.patch('/:id', clientesController.update);
 

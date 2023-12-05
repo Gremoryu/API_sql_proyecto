@@ -2,8 +2,7 @@ const db = require("../configs/db.config");
 
 class Venta {
   constructor({
-    id_ventas,
-    id_venta_producto,
+    id,
     cantidad,
     total,
     subtotal,
@@ -13,8 +12,7 @@ class Venta {
     deleted_at,
     updated_at,
   }) {
-    this.id_ventas = id_ventas;
-    this.id_venta_producto = id_venta_producto;
+    this.id = id;
     this.cantidad = cantidad;
     this.total = total;
     this.subtotal = subtotal;
@@ -28,7 +26,7 @@ class Venta {
   static async getAll({ offset, limit }, { sort, order }) {
     const connection = await db.createConnection();
     let query =
-      "SELECT id_ventas, id_venta_producto, cantidad, total, subtotal, descuento, deleted, created_at, updated_at, deleted_at FROM ventas WHERE deleted = 0";
+      "SELECT id, cantidad, total, subtotal, descuento, deleted, created_at, updated_at, deleted_at FROM ventas WHERE deleted = 0";
 
     if (sort && order) {
       query += ` ORDER BY ${sort} ${order}`;
@@ -47,7 +45,7 @@ class Venta {
   static async getById(id) {
     const connection = await db.createConnection();
     const [rows] = await connection.execute(
-      "SELECT id_ventas, id_venta_producto, cantidad, total, subtotal, descuento, deleted, created_at, updated_at, deleted_at FROM ventas WHERE id_ventas = ? AND deleted = 0",
+      "SELECT id, cantidad, total, subtotal, descuento, deleted, created_at, updated_at, deleted_at FROM ventas WHERE id = ? AND deleted = 0",
       [id]
     );
     connection.end();
@@ -55,8 +53,7 @@ class Venta {
     if (rows.length > 0) {
       const row = rows[0];
       return new Usuario({
-        id_ventas: row.id_ventas,
-        id_venta_producto: row.id_venta_producto,
+        id: row.id,
         cantidad: row.cantidad,
         total: row.total,
         subtotal: row.subtotal,
@@ -76,7 +73,7 @@ class Venta {
 
     const deletedAt = new Date();
     const [result] = connection.execute(
-      "UPDATE ventas SET deleted = 1, deleted_at = ? WHERE id_ventas = ?",
+      "UPDATE ventas SET deleted = 1, deleted_at = ? WHERE id = ?",
       [deletedAt, id]
     );
 
@@ -92,7 +89,7 @@ class Venta {
   static async deleteFisicoById(id) {
     const connection = await db.createConnection();
     const [result] = await connection.execute(
-      "DELETE FROM ventas WHERE id_ventas = ?",
+      "DELETE FROM ventas WHERE id = ?",
       [id]
     );
     connection.end();
@@ -106,14 +103,14 @@ class Venta {
 
   static async updateById(
     id,
-    { id_venta_producto, cantidad, total, subtotal, descuento }
+    { cantidad, total, subtotal, descuento }
   ) {
     const connection = await db.createConnection();
 
     const updatedAt = new Date();
     const [result] = await connection.execute(
-      "UPDATE ventas SET id_venta_producto = ?, cantidad = ?, total = ?, subtotal = ?, descuento = ?, updated_at = ? WHERE id_ventas = ?",
-      [id_venta_producto, cantidad, total, subtotal, descuento, updatedAt, id]
+      "UPDATE ventas SET cantidad = ?, total = ?, subtotal = ?, descuento = ?, updated_at = ? WHERE id = ?",
+      [cantidad, total, subtotal, descuento, updatedAt, id]
     );
 
     if (result.affectedRows == 0) {
@@ -123,24 +120,35 @@ class Venta {
     return;
   }
 
-  static async count() {
+  static async countGanancies() {
     const connection = await db.createConnection();
-    const [rows] = await connection.query(
-      "SELECT COUNT(*) AS totalCount FROM ventas WHERE deleted = 0"
-    );
+    // const [rows] = await connection.query( "CREATE PROCEDURE `countGanancias`() BEGIN SELECT SUM(total) AS totalGanancias FROM ventas WHERE deleted = 0; END;"
+    // );
+
+    const totalGanancias = await connection.query("SELECT getTotalGanacies() AS totalGanancias");
     connection.end();
 
-    return rows[0].totalCount;
+    return totalGanancias;
   }
 
-  async save() {
+  static async countVentas() {
     const connection = await db.createConnection();
+    // const [rows] = await connection.query(
+    //   "CREATE PROCEDURE `countVentas`() BEGIN SELECT COUNT(*) AS totalCount FROM ventas WHERE deleted = 0; END;"
+    // );
+
+    const totalCount = await connection.query("CALL countVentas()");
+    connection.end();
+
+    return totalCount;
+  }
+
+  async saveWithTransaction(connection) {
 
     const createdAt = new Date();
     const [result] = await connection.execute(
-      "INSERT INTO ventas (id_venta_producto, cantidad, total, subtotal, descuento, created_at, deleted) VALUES (?, ?, ?, ?, ?, ?, 0)",
+      "INSERT INTO ventas (cantidad, total, subtotal, descuento, created_at, deleted) VALUES ( ?, ?, ?, ?, ?, 0)",
       [
-        this.id_venta_producto,
         this.cantidad,
         this.total,
         this.subtotal,
@@ -148,8 +156,6 @@ class Venta {
         createdAt,
       ]
     );
-
-    connection.end();
 
     if (result.insertId === 0) {
       throw new Error("No se insertó la venta");
@@ -161,7 +167,7 @@ class Venta {
     this.updatedAt = null;
     this.deletedAt = null;
 
-    return;
+    return this.id;
   }
 }
 

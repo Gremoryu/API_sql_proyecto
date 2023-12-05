@@ -1,5 +1,6 @@
 const Venta = require("../models/venta.model");
-
+const VentaProducto = require("../models/venta_producto.model");
+const db = require("../configs/db.config");
 const index = async (req, res) => {
   try {
     const page = parseInt(req.query.page);
@@ -7,7 +8,7 @@ const index = async (req, res) => {
     const offset = (page - 1) * limit;
     const { sort, order } = req.query;
 
-    const ventas = await venta.getAll({ offset, limit }, { sort, order });
+    const ventas = await Venta.getAll({ offset, limit }, { sort, order });
 
     let response = {
       message: "ventas obtenidas exitosamente",
@@ -36,7 +37,7 @@ const index = async (req, res) => {
 const getById = async (req, res) => {
   try {
     const idventa = req.params.id;
-    const venta = await venta.getById(idventa);
+    const venta = await Venta.getById(idventa);
 
     if (!venta) {
       return res.status(404).json({
@@ -56,23 +57,33 @@ const getById = async (req, res) => {
   }
 };
 
-const create = async (req, res) => {
+const createwithTransaction = async (req, res) => {
+  const connection = await db.createConnection();
+
   try {
-    const venta = new venta({
-      id_venta_producto: req.body.id_venta_producto,
+    await connection.beginTransaction();
+
+    const venta = new Venta({
       cantidad: req.body.cantidad,
       total: req.body.total,
       subtotal: req.body.subtotal,
       descuento: req.body.descuento,
     });
 
-    await venta.save();
+    const id_venta = await venta.saveWithTransaction(connection);
 
+    for (venta_p of req.body.venta_producto) {
+      const venta_producto = new VentaProducto({ id_venta, ...venta_p });
+      await venta_producto.saveWithTransaction(connection);
+    }
+
+    await connection.commit();
     return res.status(200).json({
       message: "venta creada exitosamente",
       venta,
     });
   } catch (error) {
+    await connection.rollback();
     return res.status(500).json({
       message: "ocurrió un error al crear la venta",
       error: error.message,
@@ -80,12 +91,11 @@ const create = async (req, res) => {
   }
 };
 
-
 const deleteLogico = async (req, res) => {
   try {
     const idventa = req.params.id;
 
-    await venta.deleteLogicoById(idventa);
+    await Venta.deleteLogicoById(idventa);
 
     return res.status(200).json({
       message: "se eliminó la venta correctamente",
@@ -115,15 +125,64 @@ const deleteFisico = async (req, res) => {
   }
 };
 
+const getVentasProducto = async (req, res) => {
+  try {
+    const id_producto = req.params.id;
+    const ventas = await VentaProducto.getCantidadVentasProducto(id_producto);
+
+    return res.status(200).json({
+      message: "ventas obtenidas exitosamente",
+      ventas,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "ocurrió un error al obtener las ventas",
+      error: error.message,
+    });
+  }
+};
+
+const countGanancies = async (req, res) => {
+  try {
+    const totalganancias = await Venta.countGanancies();
+
+    return res.status(200).json({
+      message: "total de ganancias obtenidas exitosamente",
+      total: totalganancias,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "ocurrió un error al obtener el total de ganancias",
+      error: error.message,
+    });
+  }
+};
+
+const countVentas = async (req, res) => {
+  try {
+    const totalventas = await Venta.countVentas();
+
+    return res.status(200).json({
+      message: "total de ventas obtenidas exitosamente",
+      total: totalventas,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "ocurrió un error al obtener el total de ventas",
+      error: error.message,
+    });
+  }
+};
+
 const update = async (req, res) => {
   try {
     const idventa = req.params.id;
     const datosActualizar = {
-        id_venta_producto: req.body.id_venta_producto,
-        cantidad: req.body.cantidad,
-        total: req.body.total,
-        subtotal: req.body.subtotal,
-        descuento: req.body.descuento,
+      id_venta_producto: req.body.id_venta_producto,
+      cantidad: req.body.cantidad,
+      total: req.body.total,
+      subtotal: req.body.subtotal,
+      descuento: req.body.descuento,
     };
 
     await venta.updateById(idventa, datosActualizar);
@@ -142,7 +201,10 @@ const update = async (req, res) => {
 module.exports = {
   index,
   getById,
-  create,
+  createwithTransaction,
   delete: deleteLogico,
   update,
+  getVentasProducto,
+  countGanancies,
+  countVentas,
 };

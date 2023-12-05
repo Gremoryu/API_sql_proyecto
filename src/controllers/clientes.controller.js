@@ -1,6 +1,7 @@
 const Cliente = require("../models/cliente.model");
 const bcrypt = require("bcrypt");
 const saltosBcrypt = parseInt(process.env.SALTOS);
+const db = require("../configs/db.config");
 
 const index = async (req, res) => {
   try {
@@ -35,46 +36,38 @@ const index = async (req, res) => {
   }
 };
 
-const getById = async (req, res) => {
+
+
+const createwithTransaction = async (req, res) => {
+  const connection = await db.createConnection();
+
   try {
-    const idCliente = req.params.id;
-    const cliente = await Cliente.getById(idCliente);
+    await connection.beginTransaction();
 
-    if (!cliente) {
-      return res.status(404).json({
-        message: `no se encontró el Cliente con id ${idCliente}`,
-      });
-    }
-
-    return res.status(200).json({
-      message: "Cliente encontrado exitosamente",
-      cliente,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      message: "ocurrió un error al obtener el Cliente",
-      error: error.message,
-    });
-  }
-};
-
-const create = async (req, res) => {
-  try {
     const cliente = new Cliente({
       nombre: req.body.nombre,
-      a_paterno: req.body.a_p,
-      a_materno: req.body.a_m,
+      apellido_paterno: req.body.apellido_paterno,
+      apellido_materno: req.body.apellido_materno,
       email: req.body.email,
-      password: req.body.password,
+      password: bcrypt.hashSync(req.body.password, saltosBcrypt),
     });
 
-    await cliente.save();
+    const id = await cliente.savewithTransaction(connection);
+
+    for (c of req.body.contacto) {
+      const contacto = new Contacto({ id, ...c });
+      await contacto.savewithTransaction(connection);
+    }
+
+    await connection.commit();
 
     return res.status(200).json({
-      message: "Cliente creado exitosamente",
+      message: "Registro exitoso",
       cliente,
     });
   } catch (error) {
+
+    await connection.rollback();
     return res.status(500).json({
       message: "ocurrió un error al crear el Cliente",
       error: error.message,
@@ -82,6 +75,59 @@ const create = async (req, res) => {
   }
 };
 
+const getByEmail = async (req, res) => {
+  try {
+    const emailCliente = req.params.email;
+
+    const cliente = await Cliente.getByEmail(emailCliente);
+
+    return res.status(200).json({
+      message: "Cliente obtenido exitosamente",
+      data: cliente,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "ocurrió un error al obtener el Cliente",
+      error: error.message,
+    });
+  }
+}
+
+const getById = async (req, res) => {
+  try {
+    const idCliente = req.params.id;
+
+    const cliente = await Cliente.getById(idCliente);
+
+    return res.status(200).json({
+      message: "Cliente obtenido exitosamente",
+      data: cliente,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "ocurrió un error al obtener el Cliente",
+      error: error.message,
+    });
+  }
+}
+
+const getContactoById = async (req, res) => {
+  try {
+    const idCliente = req.params.id;
+
+    const contacto = await Cliente.getContactoById(idCliente);
+
+    return res.status(200).json({
+      message: "Contacto obtenido exitosamente",
+      data: contacto,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "ocurrió un error al obtener el Contacto",
+      error: error.message,
+    });
+  }
+}
 
 const deleteLogico = async (req, res) => {
   try {
@@ -143,8 +189,9 @@ const update = async (req, res) => {
 
 module.exports = {
   index,
-  getById,
-  create,
+  getByEmail,
+  getContactoById,
+  createwithTransaction,
   delete: deleteLogico,
   update,
 };

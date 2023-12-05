@@ -80,7 +80,7 @@ const deletelogico = async (req, res) => {
   try {
     const idCategoria = req.params.id;
 
-    await Categoria.deletelogicoById(idCategoria);
+    await Categoria.deleteLogicoById(idCategoria);
 
     return res.status(200).json({
       message: "se eliminó la Categoria correctamente",

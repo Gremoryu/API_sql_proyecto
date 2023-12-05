@@ -2,11 +2,11 @@ const db = require("../configs/db.config");
 
 class Cliente {
   constructor({
-    id_clientes,
+    id,
     nombre,
-    a_paterno,
-    a_materno,
-    id_ventas,
+    apellido_paterno,
+    apellido_materno,
+    id_venta,
     id_contacto,
     updated_at,
     password,
@@ -15,11 +15,11 @@ class Cliente {
     deleted_at,
     email,
   }) {
-    this.id_clientes = id_clientes;
+    this.id = id;
     this.nombre = nombre;
-    this.a_paterno = a_paterno;
-    this.a_materno = a_materno;
-    this.id_ventas = id_ventas;
+    this.apellido_paterno = apellido_paterno;
+    this.apellido_materno = apellido_materno;
+    this.id_venta = id_venta;
     this.id_contacto = id_contacto;
     this.updated_at = updated_at;
     this.password = password;
@@ -29,47 +29,53 @@ class Cliente {
     this.email = email;
   }
 
-  static async getAll({ offset, limit }, { sort, order }) {
-    const connection = await db.createConnection();
-    let query =
-      "SELECT id_clientes, email, password, deleted, created_at, updated_at, deleted_at FROM clientes WHERE deleted = 0";
-
-    if (sort && order) {
-      query += ` ORDER BY ${sort} ${order}`;
-    }
-
-    if (offset >= 0 && limit) {
-      query += ` LIMIT ${offset}, ${limit}`;
-    }
-
-    const [rows] = await connection.query(query);
-    connection.end();
-
-    return rows;
-  }
-
   static async getById(id) {
     const connection = await db.createConnection();
     const [rows] = await connection.execute(
-      "SELECT id_clientes, email, password, deleted, created_at, updated_at, deleted_at FROM clientes WHERE id_clientes = ? AND deleted = 0",
+      "SELECT id, nombre, apellido_paterno, apellido_materno, id_venta, id_contacto, updated_at, created_at, deleted, deleted_at, email FROM clientes WHERE id = ? AND deleted = 0",
       [id]
     );
     connection.end();
 
     if (rows.length > 0) {
       const row = rows[0];
+      return new Cliente(row);
+    }
+
+  }
+
+
+  static async getByEmail(email) {
+    const connection = await db.createConnection()
+    const query = 'SELECT id, email, password, deleted, created_at, updated_at, deleted_at FROM clientes WHERE email = ? AND deleted = 0'
+    const [rows] = await connection.execute(query, [email])
+
+    connection.end()
+
+    if (rows.length > 0) {
+      const row = rows[0];
       return new Cliente({
-        id_clientes: row.id_clientes,
         email: row.email,
         password: row.password,
+        apellido_paterno: row.apellido_paterno,
+        apellido_materno: row.apellido_materno,
+        id_venta: row.id_venta,
+        id_contacto: row.id_contacto,
         deleted: row.deleted,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
         deletedAt: row.deleted_at,
       });
     }
+  }
 
-    return null;
+  static async getContactoById(id) {
+    const connection = await db.createConnection();
+    const [rows] = await connection.execute("CALL getContactoCliente(?)", [id]);
+    connection.end();
+
+    return rows[0];
+
   }
 
   static async deleteLogicoById(id) {
@@ -77,7 +83,7 @@ class Cliente {
 
     const deletedAt = new Date();
     const [result] = connection.execute(
-      "UPDATE clientes SET deleted = 1, deleted_at = ? WHERE id_clientes = ?",
+      "UPDATE clientes SET deleted = 1, deleted_at = ? WHERE id = ?",
       [deletedAt, id]
     );
 
@@ -93,7 +99,7 @@ class Cliente {
   static async deleteFisicoById(id) {
     const connection = await db.createConnection();
     const [result] = await connection.execute(
-      "DELETE FROM clientes WHERE id_clientes = ?",
+      "DELETE FROM clientes WHERE id = ?",
       [id]
     );
     connection.end();
@@ -105,13 +111,13 @@ class Cliente {
     return;
   }
 
-  static async updateById(id, { nombre, a_paterno, a_materno, email, password }) {
+  static async updateById(id, { nombre, apellido_paterno, apellido_materno, email, password }) {
     const connection = await db.createConnection();
 
     const updatedAt = new Date();
     const [result] = await connection.execute(
-      "UPDATE clientes SET nombre = ?, a_paterno = ?, a_materno = ?, email = ?, password = ?, updated_at = ? WHERE id_clientes = ?",
-      [nombre, a_paterno, a_materno, email, password, updatedAt, id]
+      "UPDATE clientes SET nombre = ?, apellido_paterno = ?, apellido_materno = ?, email = ?, password = ?, updated_at = ? WHERE id = ?",
+      [nombre, apellido_paterno, apellido_materno, email, password, updatedAt, id]
     );
 
     if (result.affectedRows == 0) {
@@ -121,45 +127,26 @@ class Cliente {
     return;
   }
 
-  static async count() {
-    const connection = await db.createConnection();
-    const [rows] = await connection.query(
-      "SELECT COUNT(*) AS totalCount FROM clientes WHERE deleted = 0"
-    );
-    connection.end();
-
-    return rows[0].totalCount;
-  }
-
-  async save() {
-    const connection = await db.createConnection();
+  static async savewithTransaction(connection) {
 
     const createdAt = new Date();
     const [result] = await connection.execute(
-      "INSERT INTO clientes (nombre, a_paterno, a_materno, email, created_at, password, deleted) VALUES (?, ?, ?, ?, ?, ?, 0)",
+      "INSERT INTO clientes (nombre, apellido_paterno, apellido_materno, email, created_at, password, deleted) VALUES (?, ?, ?, ?, ?, ?, 0)",
       [
         this.nombre,
-        this.a_paterno,
-        this.a_materno,
+        this.apellido_paterno,
+        this.apellido_materno,
         this.email,
         createdAt,
         this.password,
       ]
     );
 
-    connection.end();
-
     if (result.insertId === 0) {
       throw new Error("No se insertó el cliente");
     }
 
-    this.id = result.insertId;
-    this.deleted = 0;
-    this.createdAt = createdAt;
-    this.updatedAt = null;
-    this.deletedAt = null;
-
-    return;
+    return result.insertId;
   }
 }
 

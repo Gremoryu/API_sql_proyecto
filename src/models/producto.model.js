@@ -2,14 +2,14 @@ const db = require("../configs/db.config");
 
 class Producto {
   constructor({
-    id_producto,
+    id,
     nombre,
     descripcion,
     id_categoria,
     precio,
     cantidad_disponible,
     url_img,
-    calificaciones,
+    rating,
     id_color,
     talla,
     created_at,
@@ -17,14 +17,14 @@ class Producto {
     deleted_at,
     updated_at,
   }) {
-    this.id_producto = id_producto;
+    this.id = id;
     this.nombre = nombre;
     this.descripcion = descripcion;
     this.id_categoria = id_categoria;
     this.precio = precio;
     this.cantidad_disponible = cantidad_disponible;
     this.url_img = url_img;
-    this.calificaciones = calificaciones;
+    this.rating = rating;
     this.id_color = id_color;
     this.talla = talla;
     this.created_at = created_at;
@@ -36,7 +36,7 @@ class Producto {
   static async getAll({ offset, limit }, { sort, order }) {
     const connection = await db.createConnection();
     let query =
-      "SELECT id_producto, nombre, descripcion, id_categoria, precio, cantidad, url_img, calificaciones, id_color, talla,  created_at, deleted, deleted_at, updated_at FROM productos WHERE deleted = 0";
+      "SELECT id, nombre, descripcion, id_categoria, precio, cantidad_disponible, url_img, rating, id_color, talla,  created_at, deleted, deleted_at, updated_at FROM productos WHERE deleted = 0";
 
     if (sort && order) {
       query += ` ORDER BY ${sort} ${order}`;
@@ -55,22 +55,22 @@ class Producto {
   static async getById(id) {
     const connection = await db.createConnection();
     const [rows] = await connection.execute(
-      "SELECT id_producto, nombre, descripcion, id_categoria, precio, cantidad, url_img, calificaciones, id_color, talla,  created_at, deleted, deleted_at, updated_at FROM productos WHERE id_producto = ? AND deleted = 0",
+      "SELECT id, nombre, descripcion, id_categoria, precio, cantidad_disponible, url_img, rating, id_color, talla,  created_at, deleted, deleted_at, updated_at FROM productos WHERE id = ? AND deleted = 0",
       [id]
     );
     connection.end();
 
     if (rows.length > 0) {
       const row = rows[0];
-      return new Usuario({
-        id_producto: row.id_producto,
+      return new Producto({
+        id: row.id,
         nombre: row.nombre,
         descripcion: row.descripcion,
         id_categoria: row.id_categoria,
         precio: row.precio,
         cantidad_disponible: row.cantidad_disponible,
         url_img: row.url_img,
-        calificaciones: row.calificaciones,
+        rating: row.rating,
         id_color: row.id_color,
         talla: row.talla,
         createdAt: row.created_at,
@@ -87,8 +87,8 @@ class Producto {
     const connection = await db.createConnection();
 
     const deletedAt = new Date();
-    const [result] = connection.execute(
-      "UPDATE productos SET deleted = 1, deleted_at = ? WHERE id_producto = ?",
+    const [result] = await connection.execute(
+      "UPDATE productos SET deleted = 1, deleted_at = ? WHERE id = ?",
       [deletedAt, id]
     );
 
@@ -98,13 +98,37 @@ class Producto {
       throw new Error("No se pudo eliminar el producto");
     }
 
-    return;
+    return result.affectedRows;
+  }
+
+  static async getAllDeleted() {
+    const connection = await db.createConnection();
+    // const query = `CREATE PROCEDURE getProductsDeleted() BEGIN SELECT * FROM productos WHERE deleted = 1; END`;
+    // const [rows] = await connection.query(query);
+    const [deleted] = await connection.execute("CALL getProductsDeleted()");
+    connection.end();
+
+    return deleted;
+  }
+
+  static async countProducts() {
+    const connection = await db.createConnection();
+    // const borrar = `DROP PROCEDURE IF EXISTS countProducts`;
+    // const query = await connection.query(borrar);
+
+    // const query2 = `CREATE PROCEDURE countProducts() BEGIN SELECT SUM(cantidad_disponible) AS totalCount FROM productos WHERE deleted = 0; END`;
+    // const [rows] = await connection.query(query2);
+
+    const [products] = await connection.execute("CALL countProducts()");
+    connection.end();
+
+    return products;
   }
 
   static async deleteFisicoById(id) {
     const connection = await db.createConnection();
     const [result] = await connection.execute(
-      "DELETE FROM productos WHERE id_producto = ?",
+      "DELETE FROM productos WHERE id = ?",
       [id]
     );
     connection.end();
@@ -116,45 +140,31 @@ class Producto {
     return;
   }
 
-  static async updateById(
-    id,
-    {
-      nombre,
-      descripcion,
-      id_categoria,
-      precio,
-      cantidad_disponible,
-      url_img,
-      calificaciones,
-      id_color,
-      talla,
-    }
-  ) {
+  static async updateById(id, datosActualizar) {
     const connection = await db.createConnection();
 
-    const updatedAt = new Date();
+    const fieldsToUpdate = Object.keys(datosActualizar)
+      .map((key) => `${key} = ?`)
+      .join(", ");
+    const valuesToUpdate = Object.values(datosActualizar);
+
+    const updated_at = new Date();
+    valuesToUpdate.push(updated_at);
+
     const [result] = await connection.execute(
-      "UPDATE productos SET nombre = ?, descripcion = ?, id_categoria = ?, precio = ?, cantidad_disponible = ?, url_img = ?, calificaciones = ?, id_color = ?, talla = ?, updated_at = ? WHERE id_producto = ?",
-      [
-        nombre,
-        descripcion,
-        id_categoria,
-        precio,
-        cantidad_disponible,
-        url_img,
-        calificaciones,
-        id_color,
-        talla,
-        updatedAt,
-        id,
-      ]
+      `UPDATE productos SET ${fieldsToUpdate}, updated_at = ? WHERE id = ?`,
+      [...valuesToUpdate, id]
     );
 
-    if (result.affectedRows == 0) {
+    // const [trigger] = await connection.query(
+    //   "CREATE TRIGGER update_productos BEFORE UPDATE ON productos FOR EACH ROW SET NEW.updated_at = NOW();"
+    // );
+
+    if (result.affectedRows == 0 && trigger.affectedRows == 0) {
       throw new Error("no se actualizó el producto");
     }
 
-    return;
+    return result.affectedRows;
   }
 
   static async count() {
@@ -172,16 +182,15 @@ class Producto {
 
     const createdAt = new Date();
     const [result] = await connection.execute(
-      "INSERT INTO productos (nombre, descripcion, id_categoria, precio, cantidad, url_img, calificaciones, id_color, talla,  created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO productos (nombre, descripcion, id_categoria, precio, cantidad_disponible, url_img, rating, id_color, talla, created_at, deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)",
       [
-        this.nombre,
         this.nombre,
         this.descripcion,
         this.id_categoria,
         this.precio,
         this.cantidad_disponible,
         this.url_img,
-        this.calificaciones,
+        this.rating,
         this.id_color,
         this.talla,
         createdAt,
